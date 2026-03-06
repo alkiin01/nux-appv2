@@ -1,21 +1,109 @@
-<aside class="w-64 bg-white shadow-md hidden md:flex md:flex-col">
-    <div class="h-16 flex items-center px-6 border-b border-gray-200">
-        <span class="text-xl font-bold font-sans text-indigo-600">{{ config('app.name', 'Laravel') }}</span>
-    </div>
+<!-- Sidebar -->
+<aside id="sidebar" class="group fixed top-0 left-0 z-40 h-screen transition-all duration-300 w-20 hover:w-64 -translate-x-full lg:translate-x-0">
+    <div class="h-full px-3 py-6 overflow-y-auto overflow-x-hidden bg-white border-r border-slate-200">
+        <!-- Logo -->
+        <a href="{{ url('/') }}" class="flex items-center justify-center mb-8 px-2 h-12">
+            <img src="{{ asset('image/epicor-logo.png') }}" alt="Epicor Logo" class="h-15 w-auto object-contain">
+        </a>
 
-    <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-        <a href="#" class="flex items-center px-2 py-2 text-sm font-medium text-gray-900 rounded-md bg-gray-100">
-            <svg class="mr-3 h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            Dashboard
-        </a>
-        <a href="#" class="flex items-center px-2 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900">
-            <svg class="mr-3 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            Users
-        </a>
-        <!-- Add more nav items here -->
-    </nav>
+        <!-- Navigation -->
+        <nav class="space-y-1">
+            <!-- Label -->
+            @if(isset($menuStructure['label']) && $menuStructure['label'])
+            <div class="px-4 py-2 mt-4 first:mt-0 invisible group-hover:visible">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">{{ $menuStructure['label']->menu_name }}</span>
+            </div>
+            @endif
+
+            <!-- Dashboard -->
+            <a href="{{ url('dashboard') }}" class="flex items-center gap-3 px-4 py-3 {{ request()->path() == 'dashboard' || request()->path() == '/' ? 'text-blue-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }} rounded-xl transition-colors duration-200">
+                <i class="fa-solid fa-chart-pie w-5 flex-shrink-0 text-center {{ request()->path() == 'dashboard' || request()->path() == '/' ? 'text-blue-500' : 'text-slate-700' }}"></i>
+                <span class="font-base text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">Dashboard</span>
+            </a>
+
+            <!-- Main Menus -->
+            @if(isset($menuStructure['mainMenus']))
+            @foreach($menuStructure['mainMenus'] as $idx => $mainItem)
+            @if($mainItem['menu'])
+            <div class="menu-item">
+                <button type="button" onclick="toggleMenu('main-{{ $idx }}')" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors duration-200">
+                    <i class="fa-solid fa-users w-5 flex-shrink-0 text-center text-slate-700"></i>
+                    <span class="font-base text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-1 text-left">{{ $mainItem['menu']->menu_name }}</span>
+                    <i class="fa-solid fa-chevron-down text-xs opacity-0 group-hover:opacity-100 transition-all duration-300" id="arrow-main-{{ $idx }}"></i>
+                </button>
+
+                <div class="hidden group-hover:block">
+                    <div class="hidden pl-2 mt-1 space-y-1" id="main-{{ $idx }}">
+                        @foreach($mainItem['children'] as $subIdx => $subItem)
+                        @if($subItem['menu'])
+                        <div>
+                            <button type="button" onclick="toggleMenu('sub-{{ $idx }}-{{ $subIdx }}')" class="w-full flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
+                                <i class="fa-solid fa-circle text-[6px] w-5 flex-shrink-0 text-center"></i>
+                                <span class="text-sm whitespace-nowrap flex-1 text-left">{{ $subItem['menu']->menu_name }}</span>
+                                <i class="fa-solid fa-chevron-down text-xs transition-all duration-300" id="arrow-sub-{{ $idx }}-{{ $subIdx }}"></i>
+                            </button>
+                            <div class="hidden pl-3 mt-1 space-y-1" id="sub-{{ $idx }}-{{ $subIdx }}">
+                                @foreach($subItem['children'] as $childId)
+                                @if(isset($menus[$childId]))
+                                <a href="{{ url($menus[$childId]->menu) }}" class="flex items-center gap-3 px-4 py-2 {{ request()->path() == $menus[$childId]->menu ? 'text-blue-600 font-semibold' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50' }} rounded-lg transition-colors duration-200">
+                                    <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
+                                    <span class="text-sm whitespace-nowrap">{{ $menus[$childId]->menu_name }}</span>
+                                </a>
+                                @endif
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+            @endforeach
+            @endif
+
+            @if(Auth::user()?->username === '270723-001' || Auth::user()?->username === '260422-001')
+            <div class="menu-item">
+                <button type="button" onclick="toggleMenu('data-master')" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors duration-200">
+                    <i class="fa-solid fa-database w-5 flex-shrink-0 text-center text-slate-700"></i>
+                    <span class="font-base text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-1 text-left">Data Master</span>
+                    <i class="fa-solid fa-chevron-down text-xs opacity-0 group-hover:opacity-100 transition-all duration-300" id="arrow-data-master"></i>
+                </button>
+
+                <div class="hidden group-hover:block">
+                    <div class="hidden pl-2 mt-1 space-y-1" id="data-master">
+                        <a href="{{ url('data-master/line-checked') }}" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
+                            <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
+                            <span class="text-sm whitespace-nowrap">Line Checked</span>
+                        </a>
+                        <a href="{{ url('data-master/category') }}" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
+                            <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
+                            <span class="text-sm whitespace-nowrap">Category</span>
+                        </a>
+
+                        <a href="{{ url('data-master/department') }}" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
+                            <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
+                            <span class="text-sm whitespace-nowrap">Departement</span>
+                        </a>
+                        <a href="{{ url('data-master/check-item') }}" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
+                            <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
+                            <span class="text-sm whitespace-nowrap">Check Item</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @endif
+        </nav>
+    </div>
 </aside>
+
+<script>
+    function toggleMenu(menuId) {
+        const submenu = document.getElementById(menuId);
+        const arrow = document.getElementById('arrow-' + menuId);
+        if (submenu) {
+            submenu.classList.toggle('hidden');
+            if (arrow) arrow.classList.toggle('rotate-180');
+        }
+    }
+</script>
