@@ -1,6 +1,6 @@
 <!-- Sidebar -->
 <aside id="sidebar" class="group fixed top-0 left-0 z-40 h-screen transition-all duration-300 w-20 hover:w-64 -translate-x-full lg:translate-x-0">
-    <div class="h-full px-3 py-6 overflow-y-auto overflow-x-hidden bg-white border-r border-slate-200">
+    <div class="sidebar-scroll h-full px-3 py-6 overflow-y-auto overflow-x-hidden bg-white border-r border-slate-200">
         <!-- Logo -->
         <a href="{{ url('/') }}" class="flex items-center justify-center mb-8 px-2 h-12">
             <img src="{{ asset('image/epicor-logo.png') }}" alt="Epicor Logo" class="h-15 w-auto object-contain">
@@ -15,44 +15,85 @@
             </div>
             @endif
 
-            <!-- Dashboard -->
-            <a href="{{ url('dashboard') }}" class="flex items-center gap-3 px-4 py-3 {{ request()->path() == 'dashboard' || request()->path() == '/' ? 'text-blue-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }} rounded-xl transition-colors duration-200">
-                <i class="fa-solid fa-chart-pie w-5 flex-shrink-0 text-center {{ request()->path() == 'dashboard' || request()->path() == '/' ? 'text-blue-500' : 'text-slate-700' }}"></i>
-                <span class="font-base text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300">Dashboard</span>
-            </a>
-
             <!-- Main Menus -->
-            @if(isset($menuStructure['mainMenus']))
-            @foreach($menuStructure['mainMenus'] as $idx => $mainItem)
-            @if($mainItem['menu'])
+            @if(isset($userMenuTree) && !empty($userMenuTree))
+            @foreach($userMenuTree as $idxL1 => $l1Item)
+
+            <!-- Category Label (Level 1) -->
+            <div class="px-4 py-2 mt-4 first:mt-0 invisible group-hover:visible">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">{{ $l1Item['menu_name'] }}</span>
+            </div>
+
+            <!-- Main Menus (Level 2) -->
+            @if(!empty($l1Item['children']))
+            @foreach($l1Item['children'] as $idxL2 => $l2Item)
+            @if(empty($l2Item['children']))
+            <!-- Direct Link under Category -->
             <div class="menu-item">
-                <button type="button" onclick="toggleMenu('main-{{ $idx }}')" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors duration-200">
-                    <i class="fa-solid fa-users w-5 flex-shrink-0 text-center text-slate-700"></i>
-                    <span class="font-base text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-1 text-left">{{ $mainItem['menu']->menu_name }}</span>
-                    <i class="fa-solid fa-chevron-down text-xs opacity-0 group-hover:opacity-100 transition-all duration-300" id="arrow-main-{{ $idx }}"></i>
+                <a href="{{ url($l2Item['menu']) }}" class="w-full flex items-center gap-3 px-4 py-3 {{ request()->path() == $l2Item['menu'] ? 'text-blue-600 bg-blue-50' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }} rounded-xl transition-colors duration-200">
+                    <div class="w-5 flex-shrink-0 flex items-center justify-center text-slate-700">
+                        @if(!empty(trim($l2Item['icon'])) && !str_contains($l2Item['icon'], '<span'))
+                            {!! $l2Item['icon'] !!}
+                            @else
+                            <i class="fa-solid fa-users"></i>
+                            @endif
+                    </div>
+                    <span class="font-base text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-1 text-left">{{ $l2Item['menu_name'] }}</span>
+                </a>
+            </div>
+            @else
+            <!-- Collapsible Menu with Children -->
+            <div class="menu-item">
+                <button type="button" onclick="toggleMenu(`l2-{{ $l2Item['id'] }}`)" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors duration-200">
+                    <div class="w-5 flex-shrink-0 flex items-center justify-center text-slate-700">
+                        @if(!empty(trim($l2Item['icon'])) && !str_contains($l2Item['icon'], '<span'))
+                            {!! $l2Item['icon'] !!}
+                            @else
+                            <i class="fa-solid fa-users"></i>
+                            @endif
+                    </div>
+                    <span class="font-base text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-1 text-left">{{ $l2Item['menu_name'] }}</span>
+                    <i class="fa-solid fa-chevron-down text-xs opacity-0 group-hover:opacity-100 transition-all duration-300" id="arrow-l2-{{ $l2Item['id'] }}"></i>
                 </button>
 
                 <div class="hidden group-hover:block">
-                    <div class="hidden pl-2 mt-1 space-y-1" id="main-{{ $idx }}">
-                        @foreach($mainItem['children'] as $subIdx => $subItem)
-                        @if($subItem['menu'])
+                    <div class="hidden pl-2 mt-1 space-y-1" id="l2-{{ $l2Item['id'] }}">
+                        @foreach($l2Item['children'] as $idxL3 => $l3Item)
+                        @if(!empty($l3Item['children']))
+                        <!-- Level 3 Menu with Children -->
                         <div>
-                            <button type="button" onclick="toggleMenu('sub-{{ $idx }}-{{ $subIdx }}')" class="w-full flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
-                                <i class="fa-solid fa-circle text-[6px] w-5 flex-shrink-0 text-center"></i>
-                                <span class="text-sm whitespace-nowrap flex-1 text-left">{{ $subItem['menu']->menu_name }}</span>
-                                <i class="fa-solid fa-chevron-down text-xs transition-all duration-300" id="arrow-sub-{{ $idx }}-{{ $subIdx }}"></i>
+                            <button type="button" onclick="toggleMenu(`l3-{{ $l3Item['id'] }}`)" class="w-full flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
+                                <div class="w-5 flex-shrink-0 flex items-center justify-center">
+                                    @if(!empty(trim($l3Item['icon'])) && !str_contains($l3Item['icon'], '<span'))
+                                        {!! $l3Item['icon'] !!}
+                                        @else
+                                        <i class="fa-solid fa-circle text-[6px]"></i>
+                                        @endif
+                                </div>
+                                <span class="text-sm whitespace-nowrap flex-1 text-left">{{ $l3Item['menu_name'] }}</span>
+                                <i class="fa-solid fa-chevron-down text-xs transition-all duration-300" id="arrow-l3-{{ $l3Item['id'] }}"></i>
                             </button>
-                            <div class="hidden pl-3 mt-1 space-y-1" id="sub-{{ $idx }}-{{ $subIdx }}">
-                                @foreach($subItem['children'] as $childId)
-                                @if(isset($menus[$childId]))
-                                <a href="{{ url($menus[$childId]->menu) }}" class="flex items-center gap-3 px-4 py-2 {{ request()->path() == $menus[$childId]->menu ? 'text-blue-600 font-semibold' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50' }} rounded-lg transition-colors duration-200">
+                            <div class="hidden pl-3 mt-1 space-y-1" id="l3-{{ $l3Item['id'] }}">
+                                @foreach($l3Item['children'] as $idxL4 => $l4Item)
+                                <a href="{{ url($l4Item['menu']) }}" class="flex items-center gap-3 px-4 py-2 {{ request()->path() == $l4Item['menu'] ? 'text-blue-600 font-semibold' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50' }} rounded-lg transition-colors duration-200">
                                     <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
-                                    <span class="text-sm whitespace-nowrap">{{ $menus[$childId]->menu_name }}</span>
+                                    <span class="text-sm whitespace-nowrap">{{ $l4Item['menu_name'] }}</span>
                                 </a>
-                                @endif
                                 @endforeach
                             </div>
                         </div>
+                        @else
+                        <!-- Direct Link under Collapsible -->
+                        <a href="{{ url($l3Item['menu']) }}" class="flex items-center gap-3 px-4 py-2 {{ request()->path() == $l3Item['menu'] ? 'text-blue-600 font-semibold' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50' }} rounded-lg transition-colors duration-200">
+                            <div class="w-5 flex-shrink-0 flex items-center justify-center">
+                                @if(!empty(trim($l3Item['icon'])) && !str_contains($l3Item['icon'], '<span'))
+                                    {!! $l3Item['icon'] !!}
+                                    @else
+                                    <i class="fa-solid fa-circle text-[6px]"></i>
+                                    @endif
+                            </div>
+                            <span class="text-sm whitespace-nowrap flex-1 text-left">{{ $l3Item['menu_name'] }}</span>
+                        </a>
                         @endif
                         @endforeach
                     </div>
@@ -62,36 +103,7 @@
             @endforeach
             @endif
 
-            @if(Auth::user()?->username === '270723-001' || Auth::user()?->username === '260422-001')
-            <div class="menu-item">
-                <button type="button" onclick="toggleMenu('data-master')" class="w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors duration-200">
-                    <i class="fa-solid fa-database w-5 flex-shrink-0 text-center text-slate-700"></i>
-                    <span class="font-base text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-1 text-left">Data Master</span>
-                    <i class="fa-solid fa-chevron-down text-xs opacity-0 group-hover:opacity-100 transition-all duration-300" id="arrow-data-master"></i>
-                </button>
-
-                <div class="hidden group-hover:block">
-                    <div class="hidden pl-2 mt-1 space-y-1" id="data-master">
-                        <a href="{{ url('data-master/line-checked') }}" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
-                            <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
-                            <span class="text-sm whitespace-nowrap">Line Checked</span>
-                        </a>
-                        <a href="{{ url('data-master/category') }}" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
-                            <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
-                            <span class="text-sm whitespace-nowrap">Category</span>
-                        </a>
-
-                        <a href="{{ url('data-master/department') }}" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
-                            <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
-                            <span class="text-sm whitespace-nowrap">Departement</span>
-                        </a>
-                        <a href="{{ url('data-master/check-item') }}" class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-200">
-                            <i class="fa-solid fa-circle text-[4px] w-5 flex-shrink-0 text-center"></i>
-                            <span class="text-sm whitespace-nowrap">Check Item</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
+            @endforeach
             @endif
         </nav>
     </div>

@@ -50,7 +50,6 @@ class AuthController extends Controller
             ])->withInput($request->only('username'));
         }
 
-        // Check password - can use either password or epicor_password
         $passwordMatch = ($user->password === $request->password) || Hash::check($request->password, $user->password);
 
         $epicorPasswordMatch = false;
